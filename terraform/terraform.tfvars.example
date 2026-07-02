@@ -1,0 +1,10 @@
+aws_region             = "us-east-1"
+bucket_name            = "my-s3-file-compressor-bucket"
+input_prefix           = "input/"
+output_prefix          = "output/"
+archive_name           = "archive"
+schedule_expression    = "cron(0 2 * * ? *)"
+lambda_memory_mb       = 512
+lambda_timeout_sec     = 120
+log_retention_days     = 30
+output_expiration_days = 90

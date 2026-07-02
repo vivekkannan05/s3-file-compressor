@@ -1,0 +1,11 @@
+{
+  "appName": "s3-file-compressor",
+  "version": "1.0.0",
+  "settings": {
+    "compression": {
+      "formats": ["zip", "tar", "gz"],
+      "level": "default"
+    },
+    "schedule": "daily"
+  }
+}

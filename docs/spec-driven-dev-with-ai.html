@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Three Bullets to Production: Spec-Driven Development with AI</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3348;
+    --text: #e1e4ed;
+    --text-muted: #8b90a5;
+    --accent: #6c63ff;
+    --accent-light: #8b83ff;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --gradient: linear-gradient(135deg, #6c63ff 0%, #ec4899 100%);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* --- Hero --- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%);
+    top: -100px; right: -100px;
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%);
+    bottom: -80px; left: -80px;
+    pointer-events: none;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards;
+  }
+  .hero .subtitle {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    max-width: 700px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.2s forwards;
+  }
+  .hero .scroll-hint {
+    margin-top: 3rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.4s forwards;
+  }
+  .hero .scroll-hint span {
+    display: inline-block;
+    width: 24px; height: 40px;
+    border: 2px solid var(--text-muted);
+    border-radius: 12px;
+    position: relative;
+  }
+  .hero .scroll-hint span::before {
+    content: '';
+    position: absolute;
+    width: 4px; height: 8px;
+    background: var(--accent);
+    border-radius: 2px;
+    top: 6px; left: 50%;
+    transform: translateX(-50%);
+    animation: scrollDot 1.8s infinite;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scrollDot {
+    0%, 100% { opacity: 1; top: 6px; }
+    50%      { opacity: 0.3; top: 20px; }
+  }
+
+  /* --- Container --- */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* --- Section --- */
+  section {
+    padding: 5rem 0;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  section h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  section h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 2rem 0 0.75rem;
+    color: var(--accent-light);
+  }
+  section p, section li {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+  }
+  section p { margin-bottom: 1rem; }
+  section ul, section ol {
+    margin: 0.5rem 0 1.5rem 1.5rem;
+  }
+  section li { margin-bottom: 0.4rem; }
+
+  /* --- Phase badge --- */
+  .phase-badge {
+    display: inline-block;
+    background: var(--gradient);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 0.75rem;
+  }
+
+  /* --- Blockquote --- */
+  blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: var(--text);
+  }
+
+  /* --- Callout --- */
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .callout::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--gradient);
+  }
+  .callout.lesson::before { background: var(--green); }
+  .callout.warning::before { background: var(--amber); }
+  .callout.insight::before { background: var(--cyan); }
+  .callout strong { color: var(--text); }
+  .callout-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .callout.lesson .callout-label { color: var(--green); }
+  .callout.warning .callout-label { color: var(--amber); }
+  .callout.insight .callout-label { color: var(--cyan); }
+
+  /* --- Tables --- */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  thead th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: var(--surface2);
+    color: var(--text);
+    font-weight: 600;
+    border-bottom: 2px solid var(--accent);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  tbody tr:hover td { background: var(--surface); }
+
+  /* --- Mermaid --- */
+  .mermaid-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 1rem;
+    margin: 2rem 0;
+    text-align: center;
+    overflow-x: auto;
+  }
+  .mermaid-wrap h4 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+  /* Force white text everywhere in Mermaid diagrams */
+  .mermaid-wrap svg text,
+  .mermaid-wrap svg tspan,
+  .mermaid-wrap svg .nodeLabel,
+  .mermaid-wrap svg .node .label div,
+  .mermaid-wrap svg .node .label div span,
+  .mermaid-wrap svg .node foreignObject div,
+  .mermaid-wrap svg .node foreignObject div span,
+  .mermaid-wrap svg .edgeLabel foreignObject div,
+  .mermaid-wrap svg .edgeLabel foreignObject div span,
+  .mermaid-wrap svg .cluster-label foreignObject div,
+  .mermaid-wrap svg [class*="nodeLabel"],
+  .mermaid-wrap svg [class*="label"] div,
+  .mermaid-wrap svg [class*="label"] span,
+  .mermaid-wrap svg p {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+  }
+  .mermaid-wrap svg .edgeLabel .label rect,
+  .mermaid-wrap svg .edgeLabel rect {
+    fill: var(--surface) !important;
+    opacity: 0.85;
+  }
+
+  /* --- Collapsible --- */
+  .collapsible {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 1rem 0;
+    overflow: hidden;
+  }
+  .collapsible-header {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    transition: background 0.2s;
+  }
+  .collapsible-header:hover { background: var(--surface2); }
+  .collapsible-header h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .collapsible-arrow {
+    width: 20px; height: 20px;
+    transition: transform 0.3s;
+    color: var(--text-muted);
+  }
+  .collapsible.open .collapsible-arrow { transform: rotate(180deg); }
+  .collapsible-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    padding: 0 1.25rem;
+  }
+  .collapsible.open .collapsible-body {
+    max-height: 2000px;
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  /* --- Timeline --- */
+  .timeline {
+    position: relative;
+    margin: 2rem 0;
+    padding-left: 2.5rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.5s ease;
+  }
+  .timeline-item.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .timeline-dot {
+    position: absolute;
+    left: -2.5rem;
+    top: 4px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent);
+    z-index: 1;
+  }
+  .timeline-item.done .timeline-dot {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+  .timeline-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+  .timeline-content h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  .timeline-content p {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  .timeline-time {
+    font-size: 0.75rem;
+    color: var(--accent-light);
+    font-weight: 600;
+  }
+
+  /* --- Stats grid --- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+  }
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  /* --- Pill tags --- */
+  .tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    margin-right: 0.35rem;
+  }
+  .tag.yes { background: rgba(34,197,94,0.15); color: var(--green); }
+  .tag.no  { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* --- Code --- */
+  code {
+    background: var(--surface2);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: var(--accent-light);
+  }
+
+  /* --- Divider --- */
+  .divider {
+    border: none;
+    height: 1px;
+    background: var(--border);
+    margin: 4rem 0;
+  }
+
+  /* --- KISS vs-bar --- */
+  .vs-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .vs-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .vs-card.rejected { border-color: var(--red); }
+  .vs-card.kept     { border-color: var(--green); }
+  .vs-card h5 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .vs-card.rejected h5 { color: var(--red); }
+  .vs-card.kept h5     { color: var(--green); }
+  .vs-card p { font-size: 0.85rem; margin: 0; }
+
+  /* --- Footer --- */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent-light); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* --- Responsive --- */
+  @media (max-width: 640px) {
+    .vs-container { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<div class="hero">
+  <h1>From Three Bullets to Production</h1>
+  <p class="subtitle">A practitioner's guide to using AI as a structured co-architect &mdash; not just a code generator. Spec-driven development from idea to green build in 2 hours.</p>
+  <div class="scroll-hint"><span></span></div>
+</div>
+
+<div class="container">
+
+<!-- ==================== PREMISE ==================== -->
+<section>
+  <h2>The Premise</h2>
+  <p>Most developers use AI assistants by pasting code and asking <em>"fix this"</em> or <em>"write me a function."</em> That works for small tasks. But for building production-grade systems &mdash; where security, reliability, and maintainability matter &mdash; you need a different approach.</p>
+  <p>This guide documents how we built a complete AWS Lambda project from a <strong>three-sentence idea</strong> to a production-ready, Well-Architected, fully tested system using AI as a structured thinking partner at every phase. No code was written until the spec was locked.</p>
+
+  <div class="mermaid-wrap">
+    <h4>The Journey</h4>
+    <pre class="mermaid">
+    flowchart LR
+      A["3-Bullet Idea"] --> B["Interactive Grill"]
+      B --> C["Formal Spec"]
+      C --> D["Implementation"]
+      D --> E["Well-Architected Review"]
+      E --> F["KISS Filter"]
+      F --> G["Hardening"]
+      G --> H["17 Tests Green"]
+
+      style A fill:#6c63ff,color:#fff,stroke:none
+      style B fill:#7c74ff,color:#fff,stroke:none
+      style C fill:#8b83ff,color:#fff,stroke:none
+      style D fill:#a78bfa,color:#fff,stroke:none
+      style E fill:#c084fc,color:#fff,stroke:none
+      style F fill:#d946ef,color:#fff,stroke:none
+      style G fill:#ec4899,color:#fff,stroke:none
+      style H fill:#22c55e,color:#fff,stroke:none
+    </pre>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== PHASE 1 ==================== -->
+<section>
+  <span class="phase-badge">Phase 1 &mdash; 5 minutes</span>
+  <h2>The Raw Idea</h2>
+  <p>The journey started with three bullets:</p>
+  <blockquote>
+    1. Read some files from S3<br>
+    2. Compress the files as 3 outputs &mdash; .zip, .gz and .tar<br>
+    3. Host as a Lambda, triggered by scheduler<br><br>
+    <strong>"Let's discuss before jumping into development. Let's have a grill session. Ask me."</strong>
+  </blockquote>
+  <p>That last line is the key. Instead of letting the AI run off and generate code, we explicitly requested a <strong>structured interrogation</strong>. The AI is not a code monkey &mdash; it's a co-architect who must understand the problem before touching a keyboard.</p>
+
+  <div class="callout lesson">
+    <span class="callout-label">Key Lesson</span>
+    <strong>"Ask me" &gt; "Build me"</strong> &mdash; Starting with discovery instead of generation fundamentally changes the AI's behavior. It shifts from solution mode to discovery mode, which is where the real value lies for non-trivial systems.
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== PHASE 2 ==================== -->
+<section>
+  <span class="phase-badge">Phase 2 &mdash; 20 minutes</span>
+  <h2>The Interactive Grill</h2>
+  <p>The AI initially dumped 14 questions at once. We pushed back: <em>"Ask one by one."</em> This forced sequential, focused decision-making where each answer shaped the next question.</p>
+
+  <h3>The 12 Decisions That Shaped Everything</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Question Theme</th><th>Decision</th><th>Why It Mattered</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>How are files identified?</td><td>Everything under a configurable prefix</td><td>Drove the S3 listing strategy</td></tr>
+        <tr><td>2</td><td>Volume and size?</td><td>Small &mdash; under 50 MB</td><td>Justified in-memory processing</td></tr>
+        <tr><td>3</td><td>Single or multiple buckets?</td><td>Single bucket</td><td>Simplified IAM and config</td></tr>
+        <tr><td>4</td><td>What does ".gz" mean?</td><td>Raw gzip per file, NOT .tar.gz</td><td>Prevented a wrong assumption</td></tr>
+        <tr><td>5</td><td>One archive or per-file?</td><td>.zip + .tar (all) + individual .gz</td><td>Defined the strategy pattern</td></tr>
+        <tr><td>6</td><td>Output destination?</td><td>Same bucket, different prefix</td><td>Kept infrastructure simple</td></tr>
+        <tr><td>7</td><td>Schedule frequency?</td><td>Daily</td><td>Justified concurrency = 1</td></tr>
+        <tr><td>8</td><td>Error handling?</td><td>Skip failed, compress rest, report</td><td>Defined partial failure model</td></tr>
+        <tr><td>9</td><td>Runtime mode?</td><td>GraalVM native image</td><td>Drove build tooling choices</td></tr>
+        <tr><td>10</td><td>Local testing tool?</td><td>Floci (not LocalStack)</td><td>AI had to look it up</td></tr>
+        <tr><td>11</td><td>Test data types?</td><td>Mixed (.txt, .csv, .json)</td><td>Shaped test data seeding</td></tr>
+        <tr><td>12</td><td>Notifications?</td><td>CloudWatch logs only</td><td>Simplified initial scope</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout insight">
+    <span class="callout-label">Critical Moment</span>
+    <strong>The AI Didn't Know Floci.</strong> When we said "Floci," the AI assumed we meant LocalStack or had a typo. We insisted. The AI searched, found <em>floci.io</em>, and adopted it &mdash; an MIT-licensed, Docker-based AWS emulator with no auth token. <strong>The human brings domain knowledge the AI doesn't have.</strong> The AI's job is to integrate that knowledge, not override it.
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== PHASE 3 ==================== -->
+<section>
+  <span class="phase-badge">Phase 3 &mdash; 15 minutes</span>
+  <h2>The Formal Spec</h2>
+  <p>With all 12 decisions locked, the AI produced a formal <strong>SPEC.md</strong> &mdash; a traceable specification with unique IDs on every requirement.</p>
+
+  <div class="mermaid-wrap">
+    <h4>Spec Traceability Chain</h4>
+    <pre class="mermaid">
+    flowchart LR
+      FR["Functional Requirement\nFR-1.1"] --> AC["Acceptance Criterion\nAC-1"]
+      AC --> UT["Unit Test\nZipStrategyTest"]
+      AC --> IT["Integration Test\nHappyPathIT"]
+      FR --> IR["Infra Requirement\nIR-1.1"]
+      IR --> TF["Terraform Resource\naws_iam_role_policy"]
+
+      style FR fill:#6c63ff,color:#fff,stroke:none
+      style AC fill:#8b83ff,color:#fff,stroke:none
+      style UT fill:#22c55e,color:#fff,stroke:none
+      style IT fill:#22c55e,color:#fff,stroke:none
+      style IR fill:#f59e0b,color:#fff,stroke:none
+      style TF fill:#f59e0b,color:#fff,stroke:none
+    </pre>
+  </div>
+
+  <!-- Collapsible: what the spec contains -->
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>What the spec contains (10 sections)</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body">
+      <ul>
+        <li><strong>7 Functional Requirements</strong> (FR-1 through FR-7) with traceable IDs</li>
+        <li><strong>6 Non-Functional Requirements</strong> (performance, runtime, config, observability, security, reliability)</li>
+        <li><strong>6 Edge Cases</strong> (empty prefix, all downloads fail, single file, special characters, etc.)</li>
+        <li><strong>5 Acceptance Criteria</strong> in Given/When/Then format</li>
+        <li><strong>Interface definitions</strong> with example JSON for success and partial-failure responses</li>
+        <li><strong>Technology stack</strong> with rationale for each choice</li>
+        <li><strong>Test plan</strong> mapping unit tests to strategies, integration tests to acceptance criteria</li>
+        <li><strong>Infrastructure section</strong> &mdash; 12 Terraform resources, 8 infra requirements, variables, outputs</li>
+        <li><strong>8 development phases</strong> ordered by dependency</li>
+        <li><strong>Test data files</strong> &mdash; .txt, .csv, .json with exact content</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warning">
+    <span class="callout-label">The Missing Section</span>
+    During the spec phase, we noticed the AI had skipped infrastructure. We asked <em>"Why is it taking time?"</em> &mdash; a signal that the discussion was dragging without covering Terraform. The AI added Section 9 (Infrastructure) with resources, requirements, variables, outputs, and file structure &mdash; <strong>all before a single line of code existed.</strong>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== PHASE 4 ==================== -->
+<section>
+  <span class="phase-badge">Phase 4 &mdash; 30 minutes</span>
+  <h2>Implementation</h2>
+  <p>With the spec locked, coding was mechanical. The AI worked through 8 phases in dependency order:</p>
+
+  <div class="timeline">
+    <div class="timeline-item done">
+      <div class="timeline-dot">1</div>
+      <div class="timeline-content">
+        <div class="timeline-time">Phase 1</div>
+        <h4>Scaffold</h4>
+        <p>pom.xml, docker-compose (Floci), seed script, .gitignore</p>
+      </div>
+    </div>
+    <div class="timeline-item done">
+      <div class="timeline-dot">2</div>
+      <div class="timeline-content">
+        <div class="timeline-time">Phase 2</div>
+        <h4>Models &amp; Config</h4>
+        <p>Java records (<code>FileEntry</code>, <code>CompressionResult</code>), <code>CompressorConfig</code> interface</p>
+      </div>
+    </div>
+    <div class="timeline-item done">
+      <div class="timeline-dot">3</div>
+      <div class="timeline-content">
+        <div class="timeline-time">Phase 3</div>
+        <h4>Compression Strategies</h4>
+        <p>Three classes implementing <code>CompressionStrategy</code> + 14 unit tests</p>
+      </div>
+    </div>
+    <div class="timeline-item done">
+      <div class="timeline-dot">4</div>
+      <div class="timeline-content">
+        <div class="timeline-time">Phase 4</div>
+        <h4>S3 Service</h4>
+        <p>List/download/upload with paginated listing, virtual threads, error handling</p>
+      </div>
+    </div>
+    <div class="timeline-item done">
+      <div class="timeline-dot">5</div>
+      <div class="timeline-content">
+        <div class="timeline-time">Phase 5</div>
+        <h4>Orchestrator &amp; Handler</h4>
+        <p>Sealed <code>StrategyOutcome</code>, pattern matching switch, builder pattern, timeout awareness</p>
+      </div>
+    </div>
+    <div class="timeline-item done">
+      <div class="timeline-dot">6</div>
+      <div class="timeline-content">
+        <div class="timeline-time">Phase 6</div>
+        <h4>Integration Tests</h4>
+        <p>3 full-flow tests against Floci S3 emulator</p>
+      </div>
+    </div>
+    <div class="timeline-item done">
+      <div class="timeline-dot">7</div>
+      <div class="timeline-content">
+        <div class="timeline-time">Phase 7</div>
+        <h4>Terraform</h4>
+        <p>S3, Lambda (arm64), IAM, EventBridge, CloudWatch, DLQ, Alarms, SNS</p>
+      </div>
+    </div>
+    <div class="timeline-item done">
+      <div class="timeline-dot">&check;</div>
+      <div class="timeline-content">
+        <div class="timeline-time">Phase 8</div>
+        <h4>Build Verification</h4>
+        <p>17 tests passing &mdash; BUILD SUCCESS</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== PHASE 5 ==================== -->
+<section>
+  <span class="phase-badge">Phase 5 &mdash; 30 minutes</span>
+  <h2>The Well-Architected Review</h2>
+  <p>Instead of reviewing code line-by-line, we reviewed the <strong>system</strong> through the AWS Well-Architected Framework's six pillars:</p>
+
+  <div class="mermaid-wrap">
+    <h4>Well-Architected Pillar Findings</h4>
+    <pre class="mermaid">
+    pie title Gaps Found by Pillar
+      "Operational Excellence" : 4
+      "Security" : 7
+      "Reliability" : 5
+      "Performance" : 5
+      "Cost" : 3
+      "Sustainability" : 3
+    </pre>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Pillar</th><th>Gaps Found</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Operational Excellence</strong></td><td>No alarms, no DLQ, no runbook</td><td>Failed invocations vanish silently</td></tr>
+        <tr><td><strong>Security</strong></td><td>No S3 encryption, credentials undocumented, no Zip Slip protection</td><td>Static creds in config without context</td></tr>
+        <tr><td><strong>Reliability</strong></td><td>No S3 pagination, no memory guard, strategy failures swallowed</td><td>Listing breaks at 1001 files</td></tr>
+        <tr><td><strong>Performance</strong></td><td>Sequential downloads, no arm64, no buffer pre-sizing</td><td>Virtual threads would parallelize I/O</td></tr>
+        <tr><td><strong>Cost</strong></td><td>No lifecycle policy on outputs, no right-sizing</td><td>Old compressed files accumulate forever</td></tr>
+        <tr><td><strong>Sustainability</strong></td><td>No Graviton, no data lifecycle</td><td>x86 when arm64 is cheaper and faster</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Collapsible: Full 27 gap tracker -->
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>Full Gap Tracker &mdash; 30 found, 27 implemented, 3 cancelled</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Gap</th><th>Fix</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>No failure alarms</td><td>CloudWatch Alarm on Errors &gt; 0 + SNS</td><td>Ops Excellence</td></tr>
+            <tr><td>2</td><td>No DLQ</td><td>SQS DLQ + Lambda failure destination</td><td>Ops Excellence</td></tr>
+            <tr><td>3</td><td>No S3 encryption at rest</td><td>SSE-S3 (AES256)</td><td>Security</td></tr>
+            <tr><td>4</td><td>No S3 encryption in transit</td><td>Bucket policy <code>aws:SecureTransport</code></td><td>Security</td></tr>
+            <tr><td>5</td><td>No reserved concurrency</td><td><code>reserved_concurrent_executions = 1</code></td><td>Security</td></tr>
+            <tr><td>6</td><td>No S3 pagination</td><td><code>listObjectsV2Paginator()</code></td><td>Reliability</td></tr>
+            <tr><td>7</td><td>No idempotency statement</td><td>Spec: outputs overwritten by design</td><td>Reliability</td></tr>
+            <tr><td>8</td><td>No S3 lifecycle policy</td><td>Expiration rule on <code>output/</code></td><td>Cost</td></tr>
+            <tr><td>9</td><td>No arm64</td><td><code>arm64</code> Lambda architecture</td><td>Performance</td></tr>
+            <tr><td>10</td><td>No credential strategy in spec</td><td>NFR-5: Security section</td><td>Security</td></tr>
+            <tr><td>11</td><td>Dev/test config duplication</td><td><code>quarkus.test.profile=dev</code></td><td>DRY</td></tr>
+            <tr><td>12</td><td>Prod credential type implicit</td><td>Explicit <code>type=default</code></td><td>Security</td></tr>
+            <tr><td>13</td><td>Seed script cred clarity</td><td>"Floci-only" header comment</td><td>Security</td></tr>
+            <tr><td>14</td><td>Raw exceptions in response</td><td>Sanitize ARNs/account IDs</td><td>Security</td></tr>
+            <tr><td>15</td><td>No Zip Slip protection</td><td>Validate entry names</td><td>Security</td></tr>
+            <tr><td>16</td><td>CloudWatch IAM too broad</td><td>Scoped to log group ARN</td><td>Security</td></tr>
+            <tr><td>17</td><td>No content-type on uploads</td><td>Pattern matching switch</td><td>Performance</td></tr>
+            <tr><td>18</td><td>No memory guard rail</td><td>Cumulative byte threshold</td><td>Reliability</td></tr>
+            <tr><td>19</td><td>Strategy failures swallowed</td><td>Sealed <code>StrategyOutcome</code></td><td>Reliability</td></tr>
+            <tr><td>20</td><td>No timeout awareness</td><td><code>getRemainingTimeInMillis()</code></td><td>Reliability</td></tr>
+            <tr><td>21</td><td>Sequential downloads</td><td>Virtual threads</td><td>Performance</td></tr>
+            <tr><td>23</td><td>Buffer sizing</td><td>Pre-sized <code>ByteArrayOutputStream</code></td><td>Performance</td></tr>
+            <tr><td>27</td><td>Test helpers duplicated</td><td><code>TestDecompressor</code> utility</td><td>DRY</td></tr>
+            <tr><td>28</td><td>Rigid result factories</td><td>Builder with auto-derived status</td><td>SOLID</td></tr>
+            <tr><td>29</td><td>Handler if/else for status</td><td>Builder <code>build()</code> derives it</td><td>KISS</td></tr>
+            <tr><td>30</td><td>Quarkus 3.17.7 EOL</td><td>Upgrade to 3.33.2 LTS</td><td>Security</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== PHASE 6 ==================== -->
+<section>
+  <span class="phase-badge">Phase 6 &mdash; 10 minutes</span>
+  <h2>The KISS Filter</h2>
+  <p>The most valuable 10 minutes. After identifying improvements through SOLID/DRY principles, we applied a <strong>KISS filter</strong> &mdash; a second pass that asked <em>"Is this abstraction earning its keep?"</em></p>
+
+  <div class="mermaid-wrap">
+    <h4>The KISS Decision Flow</h4>
+    <pre class="mermaid">
+    flowchart TD
+      A["SOLID/DRY proposes\nan abstraction"] --> B{"Only one\nimplementation?"}
+      B -- Yes --> C["YAGNI\nSkip it"]
+      B -- No --> D{"Is similarity\naccidental?"}
+      D -- Yes --> E["KISS\nKeep it simple"]
+      D -- No --> F{"Does it reduce\nbugs or complexity?"}
+      F -- Yes --> G["KEEP\nAbstraction earns its cost"]
+      F -- No --> E
+
+      style C fill:#ef4444,color:#fff,stroke:none
+      style E fill:#ef4444,color:#fff,stroke:none
+      style G fill:#22c55e,color:#fff,stroke:none
+    </pre>
+  </div>
+
+  <h3>Rejected vs Kept</h3>
+  <div class="vs-container">
+    <div class="vs-card rejected">
+      <h5>Rejected: <code>FileStorageService</code> Interface</h5>
+      <p>YAGNI &mdash; there's only ever one storage backend. An interface adds indirection with zero benefit.</p>
+    </div>
+    <div class="vs-card kept">
+      <h5>Kept: <code>CompressionResult</code> Builder</h5>
+      <p>7+ fields with new <code>strategyFailures</code>. Factory methods become unwieldy. Builder auto-derives status.</p>
+    </div>
+    <div class="vs-card rejected">
+      <h5>Rejected: <code>AbstractArchiveStrategy</code></h5>
+      <p>Accidental similarity &mdash; Zip, Tar, and Gzip look alike but differ in streams and multi-output. A base class adds complexity without reducing bugs.</p>
+    </div>
+    <div class="vs-card kept">
+      <h5>Kept: <code>TestDecompressor</code> Utility</h5>
+      <p>Clear DRY win &mdash; identical decompress logic was duplicated across 4 test classes.</p>
+    </div>
+  </div>
+
+  <div class="callout insight">
+    <span class="callout-label">The Principle</span>
+    <strong>DRY is about knowledge duplication, not code duplication.</strong> Three strategies that happen to write bytes to a stream aren't duplicating knowledge &mdash; they're independently implementing different compression algorithms. Forcing them into a base class conflates accidental similarity with genuine duplication.
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== PHASE 7 ==================== -->
+<section>
+  <span class="phase-badge">Phase 7 &mdash; 5 minutes</span>
+  <h2>Java 21 &amp; Quarkus Upgrade</h2>
+  <p>We evaluated modern Java features against the KISS bar:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Adopted?</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Virtual threads</strong></td><td><span class="tag yes">Yes</span></td><td>Parallel S3 downloads &mdash; I/O-bound, perfect fit</td></tr>
+        <tr><td><strong>Sealed interfaces</strong></td><td><span class="tag yes">Yes</span></td><td><code>StrategyOutcome</code> &mdash; compiler enforces exhaustive handling</td></tr>
+        <tr><td><strong>Pattern matching switch</strong></td><td><span class="tag yes">Yes</span></td><td>Content-type mapping &mdash; cleaner than if/else chain</td></tr>
+        <tr><td><strong>Record patterns</strong></td><td><span class="tag no">No</span></td><td>Marginal benefit in this codebase</td></tr>
+        <tr><td><strong>Unnamed <code>_</code> in catch</strong></td><td><span class="tag no">No</span></td><td>Preview feature &mdash; risky for native image</td></tr>
+        <tr><td><strong>Pre-sized buffers</strong></td><td><span class="tag yes">Yes</span></td><td>Minor perf win, trivial to implement</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout lesson">
+    <span class="callout-label">Version Strategy</span>
+    Quarkus was upgraded from <strong>3.17.7</strong> (EOL) to <strong>3.33.2 LTS</strong> (supported until March 2027). We chose LTS over bleeding-edge 3.37 because production stability matters more than new features.
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== ARCHITECTURE ==================== -->
+<section>
+  <h2>System Architecture</h2>
+
+  <div class="mermaid-wrap">
+    <h4>AWS Architecture &mdash; S3 File Compressor Lambda</h4>
+    <pre class="mermaid">
+    flowchart TB
+      subgraph Trigger
+        EB["EventBridge\nScheduler\n(Daily 2AM UTC)"]
+      end
+
+      subgraph Lambda["Lambda Function (arm64, 512MB)"]
+        H["CompressionHandler"]
+        S3S["S3FileService\n(Virtual Threads)"]
+        CO["CompressionOrchestrator"]
+        ZS["ZipStrategy"]
+        TS["TarStrategy"]
+        GS["GzipStrategy"]
+        H --> S3S
+        H --> CO
+        CO --> ZS
+        CO --> TS
+        CO --> GS
+      end
+
+      subgraph Storage["S3 Bucket (SSE-S3, HTTPS)"]
+        IN["input/ prefix"]
+        OUT["output/ prefix\n(90-day lifecycle)"]
+      end
+
+      subgraph Monitoring
+        CW["CloudWatch\nLogs & Alarm"]
+        SNS["SNS Topic"]
+        DLQ["SQS\nDead Letter Queue"]
+      end
+
+      EB --> H
+      S3S -- "list + download\n(paginated)" --> IN
+      CO -- "upload\n(Content-Type)" --> OUT
+      H -- "failures" --> DLQ
+      CW -- "Errors > 0" --> SNS
+
+      style EB fill:#f59e0b,color:#fff,stroke:none
+      style H fill:#6c63ff,color:#fff,stroke:none
+      style S3S fill:#8b83ff,color:#fff,stroke:none
+      style CO fill:#8b83ff,color:#fff,stroke:none
+      style ZS fill:#a78bfa,color:#fff,stroke:none
+      style TS fill:#a78bfa,color:#fff,stroke:none
+      style GS fill:#a78bfa,color:#fff,stroke:none
+      style IN fill:#06b6d4,color:#fff,stroke:none
+      style OUT fill:#06b6d4,color:#fff,stroke:none
+      style CW fill:#ec4899,color:#fff,stroke:none
+      style SNS fill:#ec4899,color:#fff,stroke:none
+      style DLQ fill:#ec4899,color:#fff,stroke:none
+    </pre>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== EXECUTION PLAN ==================== -->
+<section>
+  <h2>The Execution Plan: Idea to Production</h2>
+  <p>Here's the reusable 7-stage playbook, distilled from this experience:</p>
+
+  <div class="mermaid-wrap">
+    <h4>Reusable Execution Framework</h4>
+    <pre class="mermaid">
+    flowchart TD
+      S1["Stage 1: Structured Discovery\n(The Grill)"] --> S2["Stage 2: Formal Specification\n(SPEC.md)"]
+      S2 --> S3["Stage 3: Implementation\n(Spec-Driven Phases)"]
+      S3 --> S4["Stage 4: Architecture Review\n(Well-Architected)"]
+      S4 --> S5["Stage 5: Hardening\n(The KISS Filter)"]
+      S5 --> S6["Stage 6: Gap Implementation\n(Batched Changes)"]
+      S6 --> S7["Stage 7: Final Verification\n(Green Build)"]
+
+      S4 -- "gaps found" --> S5
+      S5 -- "cancelled items" --> S5
+      S6 -- "tests fail" --> S6
+
+      style S1 fill:#6c63ff,color:#fff,stroke:none
+      style S2 fill:#7c74ff,color:#fff,stroke:none
+      style S3 fill:#8b83ff,color:#fff,stroke:none
+      style S4 fill:#a78bfa,color:#fff,stroke:none
+      style S5 fill:#c084fc,color:#fff,stroke:none
+      style S6 fill:#d946ef,color:#fff,stroke:none
+      style S7 fill:#22c55e,color:#fff,stroke:none
+    </pre>
+  </div>
+
+  <!-- Collapsible: detailed stages -->
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>Stage 1: Structured Discovery (The Grill)</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body">
+      <ol>
+        <li>State your idea in 3-5 bullets</li>
+        <li>Tell the AI: <strong>"Don't build. Ask me questions one at a time."</strong></li>
+        <li>Answer each question &mdash; decisions compound</li>
+        <li>Lock in: scope, volume, error strategy, runtime, infrastructure, testing tools</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>Stage 2: Formal Specification</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body">
+      <ol>
+        <li>AI produces SPEC.md with traceable IDs (FR-x.x, NFR-x.x, IR-x.x)</li>
+        <li>Review for completeness: functional, non-functional, edge cases, interfaces, test plan</li>
+        <li>Add infrastructure section (Terraform/CDK/SAM) &mdash; <strong>don't defer this</strong></li>
+        <li>Add acceptance criteria in Given/When/Then</li>
+        <li>Review and sign off before any code</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>Stage 3: Implementation (Spec-Driven)</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body">
+      <ol>
+        <li>Work through phases in dependency order</li>
+        <li>Reference spec sections in each phase</li>
+        <li>Write tests alongside code, not after</li>
+        <li>Use local emulation (Floci, LocalStack) for integration tests</li>
+        <li>All tests must pass before proceeding</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>Stage 4: Architecture Review (Well-Architected)</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body">
+      <ol>
+        <li>Walk through each Well-Architected pillar &mdash; don't skip any</li>
+        <li>Catalogue every gap with a specific fix</li>
+        <li>Track items in a numbered gap list with source (which pillar found it)</li>
+        <li>Discuss trade-offs before committing to fixes</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>Stages 5-7: Hardening, Gaps, Verification</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body">
+      <ol>
+        <li><strong>KISS filter:</strong> Every proposed abstraction must earn its complexity. Cancel those that don't.</li>
+        <li><strong>Batch implementation:</strong> Group related changes (spec, code, config, Terraform, tests). Run tests after each batch.</li>
+        <li><strong>Final verification:</strong> All tests pass, spec matches code, infra matches spec, no known gaps remain.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== DECISION NOTES ==================== -->
+<section>
+  <h2>10 Critical Decision Notes</h2>
+  <p>Non-obvious lessons that shaped the project. Keep these for your next build:</p>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>1. "Ask me" &gt; "Build me"</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>Starting with discovery instead of generation produces better systems. The AI finds edge cases you wouldn't think of and forces you to make decisions explicitly.</p></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>2. One question at a time</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>Batch questions let you skip hard ones. Sequential questions force commitment at each step. This produces a cleaner spec.</p></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>3. The spec is the contract</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>Every test maps to an acceptance criterion, which maps to a requirement. When something breaks, you trace back to the spec, not to "I think it should work this way."</p></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>4. Infrastructure belongs in the spec</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>Terraform/CDK/SAM resources are part of the system. Deferring them creates a gap between what the code assumes and what actually exists.</p></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>5. Well-Architected review after first build</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>Don't review an empty spec. Build the v1, then stress-test it through each pillar. The gaps are more concrete when you have real code.</p></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>6. The KISS filter is mandatory</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>SOLID and DRY will generate proposals for abstractions. Run every proposal through "does this abstraction earn its keep?" Most won't. That's fine.</p></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>7. LTS over latest</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>For production, choose the long-term support version. Bleeding-edge frameworks break in native image builds and have untested edge cases. 3.33 LTS &gt; 3.37 latest.</p></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>8. Static credentials are a code smell</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>Even for local dev, document clearly that credentials are throwaway Floci-only values. Explicit is always better than implicit.</p></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>9. Reserved concurrency for batch jobs</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>A daily Lambda doesn't need 1000 concurrent instances. <code>reserved_concurrent_executions = 1</code> prevents runaway scaling from misconfigured cron or manual re-invokes.</p></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+      <h4>10. Sealed types for outcomes</h4>
+      <svg class="collapsible-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg>
+    </div>
+    <div class="collapsible-body"><p>When a function can succeed or fail, model that as a sealed interface. The compiler enforces exhaustive handling &mdash; no silent swallowing of errors.</p></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== STATS ==================== -->
+<section>
+  <h2>What We Built</h2>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-number">~400</div><div class="stat-label">Lines of Spec</div></div>
+    <div class="stat-card"><div class="stat-number">11</div><div class="stat-label">Java Source Files</div></div>
+    <div class="stat-card"><div class="stat-number">17</div><div class="stat-label">Tests (All Green)</div></div>
+    <div class="stat-card"><div class="stat-number">7</div><div class="stat-label">Terraform Files</div></div>
+    <div class="stat-card"><div class="stat-number">30</div><div class="stat-label">Gaps Found</div></div>
+    <div class="stat-card"><div class="stat-number">27</div><div class="stat-label">Gaps Fixed</div></div>
+    <div class="stat-card"><div class="stat-number">3</div><div class="stat-label">Cancelled (KISS)</div></div>
+    <div class="stat-card"><div class="stat-number">~2h</div><div class="stat-label">Idea to Green Build</div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ==================== CONCLUSION ==================== -->
+<section>
+  <h2>Conclusion</h2>
+  <p>Spec-driven development with AI isn't about making the AI write more code faster. It's about making the AI <strong>think with you</strong> before either of you writes anything. The spec becomes the single source of truth. The AI becomes a structured interviewer, a gap finder, and an implementation engine &mdash; in that order.</p>
+  <blockquote>The next time you have an idea, don't start with <strong>"build me X."</strong><br>Start with <strong>"let's discuss X. Grill me."</strong></blockquote>
+</section>
+
+</div>
+
+<footer>
+  <p>Companion to the <a href="../SPEC.md">S3 File Compressor Lambda Specification</a> &mdash; Built with spec-driven development, reviewed through AWS Well-Architected Framework.</p>
+</footer>
+
+<script>
+  // Mermaid init
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#6c63ff',
+      primaryTextColor: '#ffffff',
+      primaryBorderColor: '#6c63ff',
+      nodeTextColor: '#ffffff',
+      nodeBorder: '#6c63ff',
+      lineColor: '#8b90a5',
+      secondaryColor: '#22263a',
+      tertiaryColor: '#1a1d27',
+      background: '#1a1d27',
+      mainBkg: '#6c63ff',
+      textColor: '#ffffff',
+      titleColor: '#e1e4ed',
+      labelTextColor: '#ffffff',
+      clusterBkg: '#22263a',
+      clusterBorder: '#2e3348',
+      edgeLabelBackground: '#1a1d27',
+      pieTitleTextColor: '#e1e4ed',
+      pieSectionTextColor: '#ffffff',
+      pieLegendTextColor: '#e1e4ed',
+      pieSectionTextSize: '14px',
+      pieStrokeColor: '#1a1d27',
+      pie1: '#6c63ff',
+      pie2: '#ec4899',
+      pie3: '#22c55e',
+      pie4: '#f59e0b',
+      pie5: '#06b6d4',
+      pie6: '#a78bfa',
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif'
+    }
+  });
+
+  // Post-render: force all text white inside mermaid SVGs
+  mermaid.run().then(() => {
+    document.querySelectorAll('.mermaid-wrap svg').forEach(svg => {
+      svg.querySelectorAll('text, tspan, .nodeLabel, foreignObject div, foreignObject span, foreignObject p')
+        .forEach(el => {
+          el.style.setProperty('color', '#ffffff', 'important');
+          el.style.setProperty('fill', '#ffffff', 'important');
+        });
+    });
+  });
+
+  // Scroll-reveal for sections
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+  document.querySelectorAll('section').forEach(s => observer.observe(s));
+
+  // Timeline animation
+  const tlObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.timeline-item').forEach((item, i) => {
+    item.style.transitionDelay = `${i * 0.1}s`;
+    tlObserver.observe(item);
+  });
+
+  // Collapsible toggle
+  function toggleCollapsible(header) {
+    header.parentElement.classList.toggle('open');
+  }
+</script>
+</body>
+</html>
