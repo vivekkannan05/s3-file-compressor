@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Drives all compression strategies and uploads results. (§FR-3, §FR-4, §FR-5, §FR-6, §NFR-6.2)
+ * Drives all compression strategies and uploads results. (§FR-3, §FR-4, §FR-5, §FR-6, §FR-8, §NFR-6.2)
  * Uses sealed types and pattern matching for exhaustive outcome handling.
  */
 @ApplicationScoped

@@ -44,6 +44,20 @@ public final class TestDecompressor {
         return entries;
     }
 
+    public static Map<String, String> untargz(byte[] targzBytes) throws Exception {
+        var entries = new HashMap<String, String>();
+        try (var gis = new GZIPInputStream(new ByteArrayInputStream(targzBytes));
+             var tis = new TarArchiveInputStream(gis)) {
+            TarArchiveEntry entry;
+            while ((entry = tis.getNextEntry()) != null) {
+                if (entry.isFile()) {
+                    entries.put(entry.getName(), new String(tis.readAllBytes(), StandardCharsets.UTF_8));
+                }
+            }
+        }
+        return entries;
+    }
+
     public static String gunzip(byte[] gzBytes) throws Exception {
         try (var gis = new GZIPInputStream(new ByteArrayInputStream(gzBytes))) {
             return new String(gis.readAllBytes(), StandardCharsets.UTF_8);
